@@ -49,5 +49,17 @@ def update_task(task_id):
             return jsonify(todo.to_dict())
     return jsonify({"error": "Task not found"}), 404
 
+@app.route("/tasks/<int:task_id>", methods=['DELETE'])
+def delete_task(task_id):
+    global todos
+
+    task_to_delete = next((todo for todo in todos if todo.id == task_id), None)
+
+    if task_to_delete is None:
+        return jsonify({"error": "Zadanie nie znalezione"}), 404
+
+    todos = [todo for todo in todos if todo.id != task_id]
+    return '', 204
+
 if __name__ == "__main__":
     app.run()
