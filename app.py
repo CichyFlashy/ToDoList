@@ -38,5 +38,16 @@ def add_task():
     todos.append(new_task)
     return jsonify(new_task.to_dict()), 201
 
+@app.route("/tasks/<int:task_id>", methods=['PUT'])
+def update_task(task_id):
+    data = request.get_json()
+    for todo in todos:
+        if todo.id == task_id:
+            todo.name = data.get('name', todo.name)
+            todo.description = data.get('description', todo.description)
+            todo.date = data.get('date', todo.date)
+            return jsonify(todo.to_dict())
+    return jsonify({"error": "Task not found"}), 404
+
 if __name__ == "__main__":
     app.run()
