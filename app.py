@@ -22,47 +22,39 @@ class ToDo(db.Model):
             "date": self.date
         }
 
-todos = []
-
 @app.route("/tasks", methods=['GET'])
 def get_tasks():
+    todos = ToDo.query.all()
     return jsonify([todo.to_dict() for todo in todos]) 
 
 @app.route("/tasks", methods=["POST"])
 def add_task():
     data = request.get_json()
-
-    new_id = max([todo.id for todo in todos])+1 if todos else 1
-    new_task = ToDo(
-        id = new_id,
-        name = data["name"],
-        description = data["description"]
-
-    )
-    todos.append(new_task)
+    new_task = ToDo(name=data["name"], description=data["description"])
+    db.session.add(new_task)
+    db.session.commit()
     return jsonify(new_task.to_dict()), 201
 
 @app.route("/tasks/<int:task_id>", methods=['PUT'])
 def update_task(task_id):
     data = request.get_json()
-    for todo in todos:
-        if todo.id == task_id:
-            todo.name = data.get('name', todo.name)
-            todo.description = data.get('description', todo.description)
-            todo.date = data.get('date', todo.date)
-            return jsonify(todo.to_dict())
-    return jsonify({"error": "Task not found"}), 404
+    todo = ToDo.query.get(task_id)
+    if not todo:
+        return jsonify({"error": "Task not found"}), 404
+
+    todo.name = data.get('name', todo.name)
+    todo.description = data.get('description', todo.description)
+    db.session.commit()
+    return jsonify(todo.to_dict())
 
 @app.route("/tasks/<int:task_id>", methods=['DELETE'])
 def delete_task(task_id):
-    global todos
-
-    task_to_delete = next((todo for todo in todos if todo.id == task_id), None)
-
-    if task_to_delete is None:
+    todo = ToDo.query.get(task_id)
+    if not todo:
         return jsonify({"error": "Zadanie nie znalezione"}), 404
 
-    todos = [todo for todo in todos if todo.id != task_id]
+    db.session.delete(todo)
+    db.session.commit()
     return '', 204
 
 if __name__ == "__main__":
