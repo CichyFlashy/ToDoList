@@ -1,14 +1,18 @@
 from flask import Flask, jsonify, request
+from flask_sqlalchemy import SQLAlchemy
 import datetime
 
 app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///todos.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-class ToDo:
-    def __init__(self, id, name, description):
-        self.id = id
-        self.name = name
-        self.description = description
-        self.date = datetime.datetime.now()
+db = SQLAlchemy(app)
+
+class ToDo(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.String(200), nullable=True)
+    date = db.Column(db.DateTime, default=datetime.datetime.utcnow)
 
     def to_dict(self):
         return {
@@ -62,4 +66,6 @@ def delete_task(task_id):
     return '', 204
 
 if __name__ == "__main__":
+    with app.app_context():
+        db.create_all()
     app.run()
